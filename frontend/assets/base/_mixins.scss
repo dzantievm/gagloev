@@ -1,0 +1,23 @@
+@use 'variables' as *;
+
+@mixin media-md {
+	@media (max-width: #{$bp-md}) {
+		@content;
+	}
+}
+
+@mixin media-lg {
+	@media (min-width: #{$bp-lg}) {
+		@content;
+	}
+}
+
+@mixin transition($props: all, $dur: 0.2s, $ease: ease) {
+	transition: $props $dur $ease;
+}
+
+@mixin flex-center {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}

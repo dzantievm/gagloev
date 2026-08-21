@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+
+# Nuxt
+frontend/.nuxt/
+frontend/.output/
+frontend/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
