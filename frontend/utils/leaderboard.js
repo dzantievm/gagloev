@@ -61,31 +61,46 @@ function parsePlayers(csvText, periods)
 	return players
 }
 
-// Раскладывает участников на leaderboard/dropped для одного диапазона (месяц или «всё время»)
-function classifyRange(players, fromPeriod, toPeriod, days, label, prevLabel, isAll)
+// Раскладывает участников на leaderboard/dropped для одного диапазона (месяц или «всё время»).
+// Если у игрока нет данных за period сразу перед toPeriod (пропустил чекпоинт), пропуск месяца
+// не выкидывает его из конкурса: ищем последний период с данными среди periodOrder[0..toIndex-1]
+// и считаем прирост от него, а порог streak суммируем за все пропущенные месяцы.
+function classifyRange(players, periodOrder, edgeDays, toIndex, label, isAll)
 {
+	const toPeriod = periodOrder[toIndex]
 	const leaderboard = []
 	const dropped = []
 
 	for (const player of players) {
-		const from = player.periods[fromPeriod]
 		const to = player.periods[toPeriod]
-
-		if (from == null || from.xp == null) {
-			dropped.push({
-				username: player.username,
-				reason: isAll ? 'Не участвовал с начала конкурса' : `Нет данных за ${prevLabel}`,
-			})
-			continue
-		}
 
 		if (to == null || to.xp == null) {
 			dropped.push({
 				username: player.username,
-				reason: isAll ? 'Не прислал результат' : `Не прислал результат за ${label}`,
+				reason: isAll ? 'Не прислал итоговый результат' : `Не прислал результат за ${label}`,
 			})
 			continue
 		}
+
+		let fromIndex = -1
+		for (let i = toIndex - 1; i >= 0; i--) {
+			const p = player.periods[periodOrder[i]]
+			if (p != null && p.xp != null) {
+				fromIndex = i
+				break
+			}
+		}
+
+		if (fromIndex === -1) {
+			dropped.push({
+				username: player.username,
+				reason: 'Не участвовал с начала конкурса',
+			})
+			continue
+		}
+
+		const from = player.periods[periodOrder[fromIndex]]
+		const days = edgeDays.slice(fromIndex, toIndex).reduce((sum, d) => sum + d, 0)
 
 		const streakDiff = to.streak - from.streak
 		if (streakDiff < days) {
@@ -112,27 +127,20 @@ function classifyRange(players, fromPeriod, toPeriod, days, label, prevLabel, is
 // Точка входа: строит таблицы leaderboard/dropped по всем месячным вкладкам и сводной «всё время»
 export function buildLeaderboards(csvText, months)
 {
-	const periods = ['start']
-	for (const month of months) {
-		if (!periods.includes(month.fromPeriod)) periods.push(month.fromPeriod)
-		if (!periods.includes(month.toPeriod)) periods.push(month.toPeriod)
-	}
+	const periodOrder = ['start', ...months.map(month => month.toPeriod)]
+	const edgeDays = months.map(month => month.days)
 
-	const players = parsePlayers(csvText, periods)
+	const players = parsePlayers(csvText, periodOrder)
 
 	const tabs = [{ key: 'all', label: 'Всё время' }]
 	const data = {}
 
-	for (const month of months) {
-		const prevLabel = months.find(m => m.toPeriod === month.fromPeriod)?.label ?? 'старт конкурса'
+	months.forEach((month, i) => {
 		tabs.push({ key: month.key, label: month.label })
-		data[month.key] = classifyRange(players, month.fromPeriod, month.toPeriod, month.days, month.label, prevLabel, false)
-	}
+		data[month.key] = classifyRange(players, periodOrder, edgeDays, i + 1, month.label, false)
+	})
 
-	const fromPeriod = months[0].fromPeriod
-	const toPeriod = months[months.length - 1].toPeriod
-	const totalDays = months.reduce((sum, m) => sum + m.days, 0)
-	data.all = classifyRange(players, fromPeriod, toPeriod, totalDays, '', '', true)
+	data.all = classifyRange(players, periodOrder, edgeDays, periodOrder.length - 1, '', true)
 
 	return { tabs, data }
 }
