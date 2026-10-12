@@ -65,6 +65,7 @@ function parsePlayers(csvText, periods)
 // Если у игрока нет данных за period сразу перед toPeriod (пропустил чекпоинт), пропуск месяца
 // не выкидывает его из конкурса: ищем последний период с данными среди periodOrder[0..toIndex-1]
 // и считаем прирост от него, а порог streak суммируем за все пропущенные месяцы.
+// Для «всего времени» (isAll) прирост и порог streak всегда считаются от start.
 function classifyRange(players, periodOrder, edgeDays, toIndex, label, isAll)
 {
 	const toPeriod = periodOrder[toIndex]
@@ -82,8 +83,9 @@ function classifyRange(players, periodOrder, edgeDays, toIndex, label, isAll)
 			continue
 		}
 
+		// Для «всего времени» прирост считаем строго от старта, без поиска последнего периода с данными
 		let fromIndex = -1
-		for (let i = toIndex - 1; i >= 0; i--) {
+		for (let i = isAll ? 0 : toIndex - 1; i >= 0; i--) {
 			const p = player.periods[periodOrder[i]]
 			if (p != null && p.xp != null) {
 				fromIndex = i

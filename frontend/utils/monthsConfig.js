@@ -8,5 +8,6 @@ export const MONTHS = [
 	{ key: '2m', label: '2 месяц', fromPeriod: '1m', toPeriod: '2m', days: 30 },
 	{ key: '3m', label: '3 месяц', fromPeriod: '2m', toPeriod: '3m', days: 30 },
 	{ key: '4m', label: '4 месяц', fromPeriod: '3m', toPeriod: '4m', days: 31 },
-	{ key: '5m', label: '5 месяц', fromPeriod: '4m', toPeriod: '5m', days: 29 },// хотя должно быть 31
+	{ key: '5m', label: '5 месяц', fromPeriod: '4m', toPeriod: '5m', days: 29 }, // хотя должно быть 31
+	{ key: '6m', label: '6 месяц', fromPeriod: '6m', toPeriod: '6m', days: 26 },// хотя должно быть 30
 ]
